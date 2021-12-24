@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download</title>
+</head>
+
+<body onload="load()">
+    <input type="hidden" id="arquivo" value="<%=arquivo%>">
+</body>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    function load() {
+        var arquivo = document.getElementById("arquivo").value
+        var link = document.createElement("a")
+        link.href = arquivo
+        link.download = "SIVICAR_DB.CTRL"
+        link.click()
+        alert("Download sendo realizado...")
+
+    }
+</script>
+
+</html>
