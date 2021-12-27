@@ -5,7 +5,6 @@ const fs = require("fs")
 const PromiseFtp = require("promise-ftp");
 const ftp = new PromiseFtp();
 var path = require('path');
-const request = require('request');
 
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
@@ -16,6 +15,7 @@ app.use(bodyParser.json())
 
 
 async function downloadArquivo(loja) {
+    var erros = []
     var config = {
         host: {
             host: "172.30.3.11",
@@ -23,15 +23,47 @@ async function downloadArquivo(loja) {
             password: "Senha,123",
         },
         folder: `acrux/versao/sinvcar/${loja}/SINVCAR_DB.ctrl`,       // pasta no servidor a ser baixada
-        local: `./public/upload/${loja}/SIVICAR_DB.ctrl`  // pasta no projeto
+        local: `./public/upload/${loja}`  // pasta no projeto
     }
+
+
+    if (!fs.existsSync(config.local)) {
+        fs.mkdirSync(config.local);
+    } else {
+        console.log("Diretorio Existente");
+    }
+
+
     console.log("Iniciando conexão")
-    var serverMessage = await ftp.connect(config.host)
-    console.log(serverMessage)
+    try {
+        var serverMessage = await ftp.connect(config.host)
+        console.log(serverMessage)
+    } catch (erro) {
+        console.log(erro)
+        erros.push({ codErro: 1, erro: "Erro a se conectar com o provedor do arquivo na rede local" })
+    }
+
     console.log("Iniciando download")
-    var stream = await ftp.get(config.folder);
-    console.log("Retornando DOWNLOAD")
-    var pipe = await stream.pipe(fs.createWriteStream(config.local));
+    try {
+        var stream = await ftp.get(config.folder);
+        console.log("Download realizado")
+    } catch (error) {
+        console.log(error)
+        erros.push({ codErro: 2, erro: "Não encontrar arquivos na loja solicitada" })
+    }
+
+    try {
+        console.log("Retornando DOWNLOAD para pasta local")
+        var pipe = await stream.pipe(fs.createWriteStream(`${config.local}/SIVICAR_DB.ctrl`));
+    } catch (error) {
+        console.log(error)
+        erros.push({ codErro: 3, erro: "Não foi possivel encaminhar arquivo para pasta local" })
+    }
+
+    if (erros[0] != undefined) {
+        fs.writeFile(`./public/erros/erro${Date.now()}.txt`, erros)
+    }
+
     console.log("finalizando conexão")
     return ftp.end()
 }
@@ -44,9 +76,19 @@ app.get("/loja/:loja", async (req, res) => {
     var loja = req.params.loja
     await downloadArquivo(loja)
     var arquivo = `/upload/${loja}/SIVICAR_DB.ctrl`
-    console.log("arquivo")
     console.log(arquivo)
-    res.render('download', { arquivo: arquivo })
+
+    fs.stat(`./public${arquivo}`, (error, stats) => {
+        if (error) {
+            console.log(error);
+            console.log("Arquivo inexistente")
+            res.send("Arquivo inexistente")
+        }
+        else {
+            console.log(stats);
+            res.render('download', { arquivo: arquivo })
+        }
+    });
 })
 
 
