@@ -4,7 +4,8 @@ const bodyParser = require("body-parser")
 const fs = require("fs")
 const PromiseFtp = require("promise-ftp");
 const ftp = new PromiseFtp();
-
+var path = require('path');
+const request = require('request');
 
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
@@ -14,7 +15,7 @@ app.use(bodyParser.json())
 
 
 
-function downloadArquivo(loja) {
+async function downloadArquivo(loja) {
     var config = {
         host: {
             host: "172.30.3.11",
@@ -22,23 +23,17 @@ function downloadArquivo(loja) {
             password: "Senha,123",
         },
         folder: `acrux/versao/sinvcar/${loja}/SINVCAR_DB.ctrl`,       // pasta no servidor a ser baixada
-        local: `./public/upload/${loja}_SIVICAR_DB.ctrl`  // pasta no projeto
+        local: `./public/upload/${loja}/SIVICAR_DB.ctrl`  // pasta no projeto
     }
-
     console.log("Iniciando conexão")
-    ftp.connect(config.host).then(serverMessage => {
-        console.log(serverMessage)
-        console.log("Iniciando download")
-        return ftp.get(config.folder);
-    }).then(stream => {
-        console.log("Retornando DOWNLOAD")
-        stream.pipe(fs.createWriteStream(config.local));
-    }).then(() => {
-        console.log("finalizando conexão")
-        return ftp.end()
-        console.log(" conexão")
-
-    })
+    var serverMessage = await ftp.connect(config.host)
+    console.log(serverMessage)
+    console.log("Iniciando download")
+    var stream = await ftp.get(config.folder);
+    console.log("Retornando DOWNLOAD")
+    var pipe = await stream.pipe(fs.createWriteStream(config.local));
+    console.log("finalizando conexão")
+    return ftp.end()
 }
 
 app.get("/", (req, res) => {
@@ -48,8 +43,8 @@ app.get("/", (req, res) => {
 app.get("/loja/:loja", async (req, res) => {
     var loja = req.params.loja
     await downloadArquivo(loja)
-    var arquivo = await `/upload/${loja}_SIVICAR_DB.ctrl`
-    console.log(listaDeArquivos)
+    var arquivo = `/upload/${loja}/SIVICAR_DB.ctrl`
+    console.log("arquivo")
     console.log(arquivo)
     res.render('download', { arquivo: arquivo })
 })
