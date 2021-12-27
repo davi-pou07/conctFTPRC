@@ -90,6 +90,27 @@ app.get("/loja/:loja", async (req, res) => {
         }
     });
 })
+/*
+req.file.buffer.toString('base64')
+
+
+
+
+
+let buff = new Buffer(data, 'base64');
+fs.writeFileSync('stack-abuse-logo-out.png', buff);
+
+
+
+var formData = new FormData();
+var imagefile = document.querySelector('#file');
+formData.append("image", imagefile.files[0]);
+axios.post('upload_file', formData, {
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    }
+})
+*/
 
 
 app.listen(8080, () => {
